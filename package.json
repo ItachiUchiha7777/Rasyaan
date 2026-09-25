@@ -1,0 +1,16 @@
+{
+  "name": "rasyaan-ecommerce",
+  "version": "1.0.0",
+  "description": "Rasyaan - Full-Stack MERN Pahadi Products E-Commerce Website",
+  "main": "server/server.js",
+  "scripts": {
+    "server": "cd server && npm start",
+    "server:dev": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "seed": "cd server && npm run seed"
+  },
+  "keywords": ["pahadi", "uttarakhand", "ecommerce", "mern", "rasyaan"],
+  "author": "Rasyaan Team",
+  "license": "ISC"
+}
