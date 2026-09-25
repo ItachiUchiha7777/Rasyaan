@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingBag, Search, User as UserIcon, Menu, X, ChevronDown, LogOut, Package } from 'lucide-react';
+import { ShoppingBag, Search, User as UserIcon, Menu, X, ChevronDown, LogOut, Package, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 
@@ -34,7 +34,6 @@ export const Navbar = ({ onOpenSearch }) => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="w-10 h-10 rounded-xl bg-forest flex items-center justify-center text-cream shadow-md group-hover:bg-pine transition-colors">
-              {/* Subtle mountain icon */}
               <svg className="w-6 h-6 fill-current text-saffron" viewBox="0 0 24 24">
                 <path d="M14 6l-3.8 5.7 1.8 2.7H5l7-10 7 10h-2.5L14 6z" />
               </svg>
@@ -120,7 +119,7 @@ export const Navbar = ({ onOpenSearch }) => {
                   </button>
 
                   {userDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-cream border border-cream-dark shadow-xl rounded-xl py-2 z-50 animate-fadeIn">
+                    <div className="absolute right-0 mt-2 w-52 bg-cream border border-cream-dark shadow-xl rounded-xl py-2 z-50 animate-fadeIn">
                       <div className="px-4 py-2 border-b border-cream-dark">
                         <p className="text-xs text-charcoal/60 font-medium">Logged in as</p>
                         <p className="text-sm font-semibold text-forest truncate">{user.email}</p>
@@ -134,6 +133,17 @@ export const Navbar = ({ onOpenSearch }) => {
                         <Package className="w-4 h-4 mr-2 text-forest" />
                         My Orders & Account
                       </Link>
+
+                      {user.role === 'admin' && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center px-4 py-2 text-sm font-bold text-terracotta hover:bg-cream-muted transition-colors"
+                        >
+                          <Shield className="w-4 h-4 mr-2 text-terracotta" />
+                          Admin Dashboard
+                        </Link>
+                      )}
 
                       <button
                         onClick={handleLogout}
@@ -220,13 +230,24 @@ export const Navbar = ({ onOpenSearch }) => {
             Contact
           </Link>
           {user ? (
-            <Link
-              to="/account"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-base font-medium text-forest hover:text-terracotta"
-            >
-              My Account & Orders
-            </Link>
+            <>
+              <Link
+                to="/account"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block py-2 text-base font-medium text-forest hover:text-terracotta border-b border-cream-dark/40"
+              >
+                My Account & Orders
+              </Link>
+              {user.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2 text-base font-bold text-terracotta hover:underline"
+                >
+                  Admin Dashboard
+                </Link>
+              )}
+            </>
           ) : (
             <Link
               to="/login"

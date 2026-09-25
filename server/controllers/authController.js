@@ -7,6 +7,15 @@ const generateToken = (id) => {
   });
 };
 
+const sendTokenCookie = (res, token) => {
+  res.cookie('rasyaan_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
+};
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -39,6 +48,7 @@ export const registerUser = async (req, res) => {
     });
 
     const token = generateToken(user._id);
+    sendTokenCookie(res, token);
 
     res.status(201).json({
       token,
@@ -72,6 +82,8 @@ export const loginUser = async (req, res) => {
 
     if (user && (await user.matchPassword(password))) {
       const token = generateToken(user._id);
+      sendTokenCookie(res, token);
+
       res.json({
         token,
         user: {
@@ -123,6 +135,7 @@ export const googleAuth = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+    sendTokenCookie(res, token);
 
     res.json({
       token,
@@ -160,6 +173,12 @@ export const getMe = async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Private
 export const logoutUser = async (req, res) => {
+  res.clearCookie('rasyaan_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  });
+  res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });
 };
 
@@ -177,7 +196,6 @@ export const updateProfile = async (req, res) => {
 
     if (address) {
       if (!user.addresses) user.addresses = [];
-      // Add or set default
       const existingIdx = user.addresses.findIndex((a) => a.isDefault);
       if (existingIdx >= 0) {
         user.addresses[existingIdx] = { ...user.addresses[existingIdx].toObject(), ...address, isDefault: true };

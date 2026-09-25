@@ -9,17 +9,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
-    const token = localStorage.getItem('rasyaan_token');
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
     try {
       const { data } = await API.get('/auth/me');
       setUser(data.user);
     } catch (error) {
-      console.error('Failed to fetch user:', error);
       localStorage.removeItem('rasyaan_token');
       setUser(null);
     } finally {
@@ -33,14 +26,18 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const { data } = await API.post('/auth/login', { email, password });
-    localStorage.setItem('rasyaan_token', data.token);
+    if (data.token) {
+      localStorage.setItem('rasyaan_token', data.token);
+    }
     setUser(data.user);
     return data.user;
   };
 
   const register = async (userData) => {
     const { data } = await API.post('/auth/register', userData);
-    localStorage.setItem('rasyaan_token', data.token);
+    if (data.token) {
+      localStorage.setItem('rasyaan_token', data.token);
+    }
     setUser(data.user);
     return data.user;
   };
@@ -55,7 +52,9 @@ export const AuthProvider = ({ children }) => {
         avatar: googleUser.photoURL || ''
       };
       const { data } = await API.post('/auth/google', payload);
-      localStorage.setItem('rasyaan_token', data.token);
+      if (data.token) {
+        localStorage.setItem('rasyaan_token', data.token);
+      }
       setUser(data.user);
       return data.user;
     } catch (error) {

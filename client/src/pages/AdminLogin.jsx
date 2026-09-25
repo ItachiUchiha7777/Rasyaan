@@ -5,8 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/common/Button';
 
 export const AdminLogin = () => {
-  const [email, setEmail] = useState('rohitgusain792@gmail.com');
-  const [password, setPassword] = useState('rohitgusain');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -53,8 +53,8 @@ export const AdminLogin = () => {
           <div className="w-12 h-12 rounded-2xl bg-forest text-saffron flex items-center justify-center mx-auto shadow-md">
             <ShieldAlert className="w-6 h-6" />
           </div>
-          <h1 className="font-serif text-2xl font-bold text-forest">Rasyaan Admin Portal</h1>
-          <p className="text-xs text-charcoal/60">Secure dashboard access for marketplace administrators</p>
+          <h1 className="font-serif text-2xl font-bold text-forest">Admin Login</h1>
+          <p className="text-xs text-charcoal/60">Secure portal for marketplace administrators</p>
         </div>
 
         {error && (
@@ -71,7 +71,8 @@ export const AdminLogin = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="rohitgusain792@gmail.com"
+                placeholder="admin@domain.com"
+                autoComplete="username"
                 className="w-full text-xs py-3 pl-10 pr-4 rounded-xl border border-cream-dark bg-white focus:outline-none focus:border-forest text-charcoal"
                 required
               />
@@ -87,6 +88,7 @@ export const AdminLogin = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="current-password"
                 className="w-full text-xs py-3 pl-10 pr-4 rounded-xl border border-cream-dark bg-white focus:outline-none focus:border-forest text-charcoal"
                 required
               />
@@ -95,14 +97,10 @@ export const AdminLogin = () => {
           </div>
 
           <Button type="submit" variant="primary" fullWidth size="lg" loading={loading}>
-            <span>Login to Admin Panel</span>
+            <span>Sign In</span>
             <ArrowRight className="w-4 h-4 ml-2 inline" />
           </Button>
         </form>
-
-        <div className="p-3 bg-forest/5 rounded-xl border border-forest/10 text-center text-[11px] text-charcoal/60">
-          Initialized Admin: <strong className="text-forest">rohitgusain792@gmail.com</strong>
-        </div>
 
       </div>
     </div>

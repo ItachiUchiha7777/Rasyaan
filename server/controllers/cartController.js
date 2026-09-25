@@ -78,6 +78,55 @@ export const addToCart = async (req, res) => {
   }
 };
 
+// @desc    Merge guest cart into user cart
+// @route   POST /api/cart/merge
+// @access  Private
+export const mergeCart = async (req, res) => {
+  try {
+    const { items = [] } = req.body;
+
+    let cart = await Cart.findOne({ user: req.user._id });
+    if (!cart) {
+      cart = new Cart({ user: req.user._id, items: [] });
+    }
+
+    for (const guestItem of items) {
+      const pId = guestItem.productId || (guestItem.product && (guestItem.product._id || guestItem.product));
+      if (!pId) continue;
+
+      const product = await Product.findById(pId);
+      if (!product || !product.isActive) continue;
+
+      const effectivePrice = product.discountPrice > 0 ? product.discountPrice : product.price;
+      const itemIndex = cart.items.findIndex((item) => item.product.toString() === pId.toString());
+
+      if (itemIndex > -1) {
+        const mergedQty = cart.items[itemIndex].quantity + Number(guestItem.quantity || 1);
+        cart.items[itemIndex].quantity = Math.min(mergedQty, product.stock);
+        cart.items[itemIndex].price = effectivePrice;
+      } else {
+        const qty = Math.min(Number(guestItem.quantity || 1), product.stock);
+        cart.items.push({
+          product: pId,
+          quantity: qty,
+          price: effectivePrice
+        });
+      }
+    }
+
+    await cart.save();
+
+    const updatedCart = await Cart.findById(cart._id).populate({
+      path: 'items.product',
+      select: 'name slug price discountPrice images stock weight category'
+    });
+
+    res.json(updatedCart);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Update cart item quantity
 // @route   PUT /api/cart/:itemId
 // @access  Private

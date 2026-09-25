@@ -5,34 +5,67 @@ import API from '../services/api';
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Sync with backend if user is logged in, else use localStorage
-  const fetchCart = async () => {
+  const syncAndFetchCart = async () => {
+    if (authLoading) return;
+
     if (user) {
       try {
         setLoading(true);
-        const { data } = await API.get('/cart');
-        const formattedItems = (data.items || []).map((item) => ({
-          _id: item._id,
-          product: item.product,
-          quantity: item.quantity,
-          price: item.price
-        }));
-        setCartItems(formattedItems);
+        // Check if there are guest cart items to merge upon login
+        const guestCartRaw = localStorage.getItem('rasyaan_guest_cart') || localStorage.getItem('rasyaan_local_cart');
+        let guestItems = [];
+        if (guestCartRaw) {
+          try {
+            guestItems = JSON.parse(guestCartRaw);
+          } catch (e) {
+            guestItems = [];
+          }
+        }
+
+        if (Array.isArray(guestItems) && guestItems.length > 0) {
+          const formattedGuestItems = guestItems.map((item) => ({
+            productId: item.productId || (item.product && (item.product._id || item.product)),
+            quantity: item.quantity || 1
+          }));
+
+          const { data: mergedData } = await API.post('/cart/merge', { items: formattedGuestItems });
+          localStorage.removeItem('rasyaan_guest_cart');
+          localStorage.removeItem('rasyaan_local_cart');
+
+          const formatted = (mergedData.items || []).map((item) => ({
+            _id: item._id,
+            product: item.product,
+            quantity: item.quantity,
+            price: item.price
+          }));
+          setCartItems(formatted);
+        } else {
+          // Fetch existing user cart
+          const { data } = await API.get('/cart');
+          const formatted = (data.items || []).map((item) => ({
+            _id: item._id,
+            product: item.product,
+            quantity: item.quantity,
+            price: item.price
+          }));
+          setCartItems(formatted);
+        }
       } catch (err) {
-        console.error('Error fetching cart:', err);
+        console.error('Error fetching/merging cart:', err);
       } finally {
         setLoading(false);
       }
     } else {
-      const localCart = localStorage.getItem('rasyaan_local_cart');
-      if (localCart) {
+      // Guest User: restore guest cart from localStorage
+      const guestCartRaw = localStorage.getItem('rasyaan_guest_cart') || localStorage.getItem('rasyaan_local_cart');
+      if (guestCartRaw) {
         try {
-          setCartItems(JSON.parse(localCart));
+          setCartItems(JSON.parse(guestCartRaw));
         } catch (e) {
           setCartItems([]);
         }
@@ -43,15 +76,15 @@ export const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchCart();
-  }, [user]);
+    syncAndFetchCart();
+  }, [user, authLoading]);
 
-  // Save guest cart locally
+  // Persist guest cart to localStorage when not logged in
   useEffect(() => {
-    if (!user) {
-      localStorage.setItem('rasyaan_local_cart', JSON.stringify(cartItems));
+    if (!user && !authLoading) {
+      localStorage.setItem('rasyaan_guest_cart', JSON.stringify(cartItems));
     }
-  }, [cartItems, user]);
+  }, [cartItems, user, authLoading]);
 
   const addToCart = async (product, quantity = 1) => {
     if (user) {
@@ -75,7 +108,7 @@ export const CartProvider = ({ children }) => {
         setLoading(false);
       }
     } else {
-      // Local cart
+      // Local Guest Cart
       const existingIdx = cartItems.findIndex((item) => item.product._id === product._id);
       let updated;
       if (existingIdx > -1) {
@@ -93,7 +126,8 @@ export const CartProvider = ({ children }) => {
         updated = [
           ...cartItems,
           {
-            _id: `local-${Date.now()}`,
+            _id: `guest-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            productId: product._id,
             product,
             quantity,
             price: effectivePrice
@@ -170,6 +204,7 @@ export const CartProvider = ({ children }) => {
       }
     }
     setCartItems([]);
+    localStorage.removeItem('rasyaan_guest_cart');
     localStorage.removeItem('rasyaan_local_cart');
   };
 
